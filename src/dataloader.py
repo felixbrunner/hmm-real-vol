@@ -5,6 +5,7 @@ import datetime as dt
 import requests
 import io
 import zipfile
+import math
 
 
 def download_factor_data(freq='D'):
@@ -34,3 +35,16 @@ def download_factor_data(freq='D'):
         factors_monthly.columns = ['Mkt-RF','SMB','HML','RF']
         factors_monthly.index = factors_monthly.index+pd.tseries.offsets.MonthEnd(0)
         return factors_monthly
+    
+
+def download_goyal_welch():
+
+    '''
+    Downloads Goyal/Welch predictor data from Amit Goyal's website and returns DataFrame.
+    '''
+
+    url = 'http://www.hec.unil.ch/agoyal/docs/PredictorData2019.xlsx'
+    df_predictors = pd.read_excel(url, sheet_name='Monthly')
+    dates = df_predictors.yyyymm
+    df_predictors.index = [(dt.datetime(year = math.floor(date/100),month = date%100,day = 1)+dt.timedelta(days=32)).replace(day=1)-dt.timedelta(days=1) for date in dates]
+    return df_predictors
