@@ -3,6 +3,7 @@ import numpy as np
 import warnings
 
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
+from hmmlearn.hmm import GaussianHMM
 from src.dists import GaussianMixtureDistribution
 from src.markov import MarkovChain
 
@@ -27,7 +28,7 @@ class HMM():
         self.filt_prob_ = None
     
     
-    def fit(self, y, package='statsmodels', start_params=None, **kwargs):
+    def fit(self, y, package='statsmodels', start_params=None, iter=100, **kwargs):
         
         '''
         Fits the Gaussian HMM to the series y.
@@ -45,17 +46,33 @@ class HMM():
                 #                        +(np.random.randn(self.k)*s/2+m).tolist()\
                 #                        +(np.random.randn(self.k)*v+s).tolist()
             model = MarkovRegression(endog=y, switching_variance=self.switch_var, switching_trend=self.switch_const, k_regimes=self.k)\
-                                .fit(start_params=start_params, **kwargs)
+                                .fit(start_params=start_params, maxiter=iter, **kwargs)
             self.params_ = model.params
             self.se_ = model.bse
             self.tstats_ = model.tvalues
             self.metrics_ = pd.Series({'llf': model.llf, 'aic': model.aic, 'bic': model.bic,})
             self.smooth_prob_ = model.smoothed_marginal_probabilities
             self.filt_prob_ = model.filtered_marginal_probabilities
-            return self
         
         if package=='hmmlearn':
-            pass
+
+            assert self.switch_var is True and self.switch_const is True, 'only implemented for fully parametrised components'
+            t_index = y.index
+            y = np.expand_dims(y.values, axis=1)
+            model = GaussianHMM(n_components=self.k, n_iter=iter, **kwargs).fit(y)
+            trans_probas = model.transmat_.T.reshape(self.k**2,1)[:self.k**2-self.k]
+            states = np.arange(self.k)
+            p_index=[f'p[{j}->{i}]' for i in states[:-1] for j in states]\
+                        +[f'const[{i}]' for i in states]\
+                        +[f'sigma2[{i}]' for i in states]
+            self.params_ = pd.Series(np.concatenate((trans_probas, model.means_, model.covars_.squeeze(axis=1))).squeeze(), index=p_index)
+            llf = model.score(y)
+            self.metrics_ = pd.Series({'llf': llf,
+                                       'aic': 2*len(self.params_)-2*llf,
+                                       'bic': len(self.params_)*np.log(len(y))-2*llf})
+            self.smooth_prob_ = pd.DataFrame(model.predict_proba(y), index=t_index)
+
+        return self
     
     
     @property
