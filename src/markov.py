@@ -23,15 +23,18 @@ class MarkovChain:
         
     @transition_matrix.setter
     def transition_matrix(self, transition_matrix):
-        transition_matrix = np.array(transition_matrix)
-        assert transition_matrix.shape[0] == transition_matrix.shape[1], \
-            'transition matrix needs to be square'
-        assert all(transition_matrix.sum(axis=1) == 1), \
-            'transition matrix rows need to sum to one'
-        if hasattr(self, 'state_vector'):
-            assert transition_matrix.shape[0] == self.state_vector.shape[1], \
-                'state vector dimension mismatch'
-        self._transition_matrix = transition_matrix
+        if transition_matrix:        
+            transition_matrix = np.array(transition_matrix)
+            assert transition_matrix.shape[0] == transition_matrix.shape[1], \
+                'transition matrix needs to be square'
+            assert all(transition_matrix.sum(axis=1) == 1), \
+                'transition matrix rows need to sum to one'
+            if hasattr(self, 'state_vector'):
+                assert transition_matrix.shape[0] == self.state_vector.shape[1], \
+                    'state vector dimension mismatch'
+            self._transition_matrix = transition_matrix
+        else:
+            self._transition_matrix = None
         
     
     @property
@@ -45,15 +48,18 @@ class MarkovChain:
     
     @state_vector.setter
     def state_vector(self, state_vector):
-        state_vector = np.array(state_vector).reshape(1,-1)
-        assert state_vector.sum(axis=1) == 1, \
-            'state vector needs to sum to one'
-        assert (state_vector>=0).all() and (state_vector<=1).all(), \
-            'probabilites need to be bounded between zero and one'
-        if hasattr(self, 'transition_matrix'):
-            assert state_vector.shape[1] == self.transition_matrix.shape[0], \
-                'transition matrix dimension mismatch'
-        self._state_vector = state_vector
+        if state_vector:
+            state_vector = np.array(state_vector).reshape(1,-1)
+            assert state_vector.sum(axis=1) == 1, \
+                'state vector needs to sum to one'
+            assert (state_vector>=0).all() and (state_vector<=1).all(), \
+                'probabilites need to be bounded between zero and one'
+            if hasattr(self, 'transition_matrix'):
+                assert state_vector.shape[1] == self.transition_matrix.shape[0], \
+                    'transition matrix dimension mismatch'
+            self._state_vector = state_vector
+        else:
+            self._state_vector = None
     
 
     def steady_state(self, set_state=False):
@@ -107,7 +113,7 @@ class MarkovChain:
         
         # ensure total probability is 1
         if new_state.sum() != 1:
-            new_state = new_state/new_state.sum()        
+            new_state = new_state.round(16)/new_state.round(16).sum()
         
         if set_state:
             self.state_vector = new_state
