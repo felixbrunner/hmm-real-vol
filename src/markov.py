@@ -143,9 +143,10 @@ class MarkovChain:
         If t_steps is zero, only the current state is drawn.
         '''
         
-        sample = np.random.choice(mc.n_states, size=1, p=mc.state_vector.squeeze())
+        sample = np.random.choice(self.n_states, size=1, p=self.state_vector.squeeze())
         for t in range(1, t_steps+1):
-            sample = np.concatenate([sample, np.random.choice(mc.n_states, size=1, p=mc.transition_matrix[draw])])
+            sample = np.concatenate([sample, \
+                        np.random.choice(self.n_states, size=1, p=self.transition_matrix[sample[-1]])])
         return sample
     
     
