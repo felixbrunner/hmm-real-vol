@@ -4,4 +4,5 @@ from src.utils import *
 
 from src.dists import GaussianMixtureDistribution, ProductDistribution
 from src.markov import MarkovChain
-from src.model import HMM
+from src.hmm import HMM
+from src.models import NormalModel

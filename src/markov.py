@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import entropy
 
 class MarkovChain:
     
@@ -7,67 +8,155 @@ class MarkovChain:
     '''
     
     def __init__(self, transition_matrix=None, state_vector=None):
-
         self.transition_matrix = transition_matrix
         self.state_vector = state_vector
-
-        if transition_matrix is not None:
-            self.n_states = self.transition_matrix.shape[0]
-        elif self.state_vector is not None:
-            self.n_states = len(self.state_vector)
-
-
-    def set_transition_matrix(self, transition_matrix):
-        self.transition_matrix = transition_matrix
-        
-
-    def set_state_vector(state_vector):
-        self.state_vector = state_vector
-    
 
     @property
-    def steady_state_probabilities(self, set_state=False):
+    def transition_matrix(self):
+        
+        '''
+        The Markov state transition probability matrix.
+        Needs to be square.
+        '''
+        
+        return self._transition_matrix
+        
+    @transition_matrix.setter
+    def transition_matrix(self, transition_matrix):
+        transition_matrix = np.array(transition_matrix)
+        assert transition_matrix.shape[0] == transition_matrix.shape[1], \
+            'transition matrix needs to be square'
+        assert all(transition_matrix.sum(axis=1) == 1), \
+            'transition matrix rows need to sum to one'
+        if hasattr(self, 'state_vector'):
+            assert transition_matrix.shape[0] == self.state_vector.shape[1], \
+                'state vector dimension mismatch'
+        self._transition_matrix = transition_matrix
+        
+    
+    @property
+    def state_vector(self):
+        
+        '''
+        The current state vector.
+        '''
+        
+        return self._state_vector
+    
+    @state_vector.setter
+    def state_vector(self, state_vector):
+        state_vector = np.array(state_vector).reshape(1,-1)
+        assert state_vector.sum(axis=1) == 1, \
+            'state vector needs to sum to one'
+        assert (state_vector>=0).all() and (state_vector<=1).all(), \
+            'probabilites need to be bounded between zero and one'
+        if hasattr(self, 'transition_matrix'):
+            assert state_vector.shape[1] == self.transition_matrix.shape[0], \
+                'transition matrix dimension mismatch'
+        self._state_vector = state_vector
+    
+
+    def steady_state(self, set_state=False):
+        
+        '''
+        Returns the steady state probabilities of the Markov chain.
+        If set_state=True, MarkovChain object is modified in place.
+        '''
+        
         dim = np.array(self.transition_matrix).shape[0]
         q = np.c_[(self.transition_matrix-np.eye(dim)),np.ones(dim)]
         QTQ = np.dot(q, q.T)
-        steady_state_probabilities = np.linalg.solve(QTQ,np.ones(dim))
+        steady_state = np.linalg.solve(QTQ,np.ones(dim))
         if set_state:
-            self.state_vector = steady_state_probabilities
-        return steady_state_probabilities
-
-
-    def iterate(self, steps=1, return_state_vector=False):
-        self.state_vector = np.dot(self.state_vector, np.linalg.matrix_power(self.transition_matrix, steps))
-        if return_state_vector:
-            return self.state_vector
-    
-
-    def rvs(self, T=1):
-        draw = np.random.choice(self.n_states, size=1, p=self.state_vector)[0]
-        sample = [draw]
-        for t in range(1,T):
-            draw = np.random.choice(self.n_states, size=1, p=self.transition_matrix[draw])[0]
-            sample += [draw]
-        if T is 1:
-            sample = sample[0]
-        return sample
-    
+            self.state_vector = steady_state
+        else:
+            return steady_state
+        
+        
     @property
     def expected_durations(self):
+        
+        '''
+        Returns the expected state durations of the MarkovChain object.
+        '''
+        
         expected_durations = (np.ones(self.n_states)-np.diag(self.transition_matrix))**-1
         return expected_durations
-
-
-    def entropy(self):
+    
+    
+    @property
+    def n_states(self):
         
         '''
-        Calculate Shannon's entropy based on logarithms with base n of the n state probabilities.
+        Returns the number of states of the MarkovChain object.
         '''
         
-        entropy = 0
-        for p in self.state_vector:
-            if p == 0:
-                pass
-            else:
-                entropy += p*np.log(p)/np.log(self.n_states)
-        return abs(entropy)
+        return self.state_vector.shape[1]
+
+
+    def iterate(self, steps=1, set_state=False):
+        
+        '''
+        Iterates the MarkovChain object in place.
+        steps needs to be a positive integer.
+        (negative steps work, but tend to break before the initial state)
+        If set_state=True, MarkovChain object is modified in place.
+        '''
+        
+        new_state = np.dot(self.state_vector, np.linalg.matrix_power(self.transition_matrix, steps))
+        
+        # ensure total probability is 1
+        if new_state.sum() != 1:
+            new_state = new_state/new_state.sum()        
+        
+        if set_state:
+            self.state_vector = new_state
+        else:
+            return new_state
+        
+        
+    def forecast(self, horizons=[1]):
+        
+        '''
+        Returns forecasted state probabilities for a set of horizons.
+        horizons needs to be an iterable.
+        '''
+        
+        horizons_states = np.array([]).reshape(0, self.n_states)
+        for horizon in horizons:
+            pi_ = np.dot(self.state_vector, np.linalg.matrix_power(self.transition_matrix, horizon))
+            horizons_states = np.concatenate([horizons_states, pi_.reshape(1, self.n_states)], axis=0)
+        return horizons_states
+    
+
+    def rvs(self, t_steps=0, random_state=1):
+        
+        '''
+        Draws a random sample sequence from the MarkovChain object.
+        t_steps is the number of time steps forward to be drawn.
+        If t_steps is zero, only the current state is drawn.
+        '''
+        
+        sample = np.random.choice(mc.n_states, size=1, p=mc.state_vector.squeeze())
+        for t in range(1, t_steps+1):
+            sample = np.concatenate([sample, np.random.choice(mc.n_states, size=1, p=mc.transition_matrix[draw])])
+        return sample
+    
+    
+    def entropy(self, horizons=None):
+        
+        '''
+        Calculate Shannon's entropy of the n state probabilities based on logarithms with base n.
+        '''
+        
+        if horizons is None:
+            state_entropy = entropy(self.state_vector.squeeze(), base=self.n_states)
+        
+        else:
+            horizon_states = self.forecast(horizons)
+            state_entropy = []
+            for horizon in horizon_states:
+                state_entropy += [entropy(horizon.squeeze(), base=self.n_states)]
+            
+        return np.array(state_entropy)
+    
