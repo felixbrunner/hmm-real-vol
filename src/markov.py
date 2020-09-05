@@ -23,7 +23,7 @@ class MarkovChain:
         
     @transition_matrix.setter
     def transition_matrix(self, transition_matrix):
-        if transition_matrix:        
+        if transition_matrix is not None:        
             transition_matrix = np.array(transition_matrix)
             assert transition_matrix.shape[0] == transition_matrix.shape[1], \
                 'transition matrix needs to be square'
@@ -48,7 +48,7 @@ class MarkovChain:
     
     @state_vector.setter
     def state_vector(self, state_vector):
-        if state_vector:
+        if state_vector is not None:
             state_vector = np.array(state_vector).reshape(1,-1)
             assert state_vector.sum(axis=1) == 1, \
                 'state vector needs to sum to one'
