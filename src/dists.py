@@ -198,6 +198,11 @@ class MixtureDistribution(BaseDistribution):
         
     
     def _check_component(self, component):
+        
+        '''
+        Checks component inputs.
+        '''
+        
         dist, weight = component
         assert isinstance(dist, BaseDistribution), \
             'unknown component distribution type'
@@ -208,7 +213,9 @@ class MixtureDistribution(BaseDistribution):
     def components(self):
         
         '''
-        
+        List of (distribution, weight) tuples.
+        Distributions need to be instances of Base Distribution.
+        Weights need to be numbers.
         '''
         
         return self._components
@@ -375,18 +382,6 @@ class MixtureDistribution(BaseDistribution):
         stds = [distribution.std() for (distribution, weight) in self.components]
         return stds
     
-
-    def pdf2(self, x):
-        
-        '''
-        
-        '''
-        
-        y = np.zeros(np.array(x).shape)
-        for (m, s, w) in self.components:
-            y += w*sp.stats.norm.pdf(x, m, s)
-        return y
-    
     
     def pdf(self, x):
         
@@ -428,6 +423,8 @@ class MixtureDistribution(BaseDistribution):
             return (sample, states)
         else:
             return sample
+    
+
     
 
 
