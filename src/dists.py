@@ -10,7 +10,183 @@ from src.utils import normal_central_moment
 
 # CLASSES
 
-class GaussianMixtureDistribution:
+
+class BaseDistribution:
+    
+    '''
+    Base class for distributions.
+    '''
+    
+    def __init__(self):
+        pass
+    
+
+    def std(self):
+
+        '''
+        Returns the distribution standard deviation.
+        '''
+
+        return self.var()**0.5
+
+
+    def exkurt(self):
+
+        '''
+        Returns the excess kurtosis.
+        '''
+
+        return self.kurt()-3
+
+
+    def mvsk(self):
+    
+        '''
+        Returns the first four standardised moments about the mean.
+        '''
+    
+        m = self.mean()
+        v = self.var()
+        s = self.skew()
+        k = self.kurt()
+        return (m, v, s, k)
+
+
+
+class NormalDistribution(BaseDistribution):
+    
+    '''
+    A normal distribution.
+    If no parameters are specified, a standard normal distribution.
+    '''
+    
+    def __init__(self, mu=0, sigma=1):
+        self.mu = mu
+        self.sigma = sigma
+        
+        
+    @property
+    def mu(self):
+        
+        '''
+        The distribution mean.
+        '''
+        
+        return self._mu
+    
+    @mu.setter
+    def mu(self, mu):
+        assert type(mu) == int or type(mu) == float, \
+            'mu needs to be numeric'
+        self._mu = mu
+        
+        
+    @property
+    def sigma(self):
+        
+        '''
+        The distribution standard deviation.
+        '''
+        
+        return self._sigma
+    
+    @sigma.setter
+    def sigma(self, sigma):
+        assert type(sigma) == int or type(sigma) == float, \
+            'sigma needs to be numeric'
+        self._sigma = sigma
+    
+    
+    def central_moment(self, moment):
+
+        '''
+        Returns the central moments of input order.
+        '''
+        
+        assert moment>0 and type(moment)==int, \
+            'moment needs to be a positive integer'
+
+        if moment % 2 == 1:
+            #odd moments of a normal are zero
+            central_moment = 0 
+        else:
+            #even moments are given by sigma^n times the double factorial
+            central_moment = self.sigma**moment * sp.special.factorialk(moment-1, 2)
+        return central_moment
+    
+    
+    def standardised_moment(self, moment):
+    
+        '''
+        Returns the normalised moment of input order.
+        '''
+        
+        assert moment>0 and type(moment)==int, \
+            'moment needs to be a positive integer'
+        
+        central_moment = self.central_moment(moment)
+        if (moment<=2):
+            standardised_moment = central_moment
+        else:
+            standardised_moment = central_moment / self.var()**(moment/2)
+        return standardised_moment
+    
+    
+    def mean(self):
+        
+        '''
+        Returns the distribution mean.
+        '''
+        
+        return self.mu
+    
+    
+    def var(self):
+        
+        '''
+        Returns the distribution variance.
+        '''
+        
+        var = self.standardised_moment(2)
+        return var
+    
+    
+    def skew(self):
+        
+        '''
+        Returns the distribution skewness.
+        '''
+        
+        skew = self.standardised_moment(3)
+        return skew
+    
+    
+    def kurt(self):
+        
+        '''
+        Returns the distribution kurtosis.
+        '''
+        
+        kurt = self.standardised_moment(4)
+        return kurt
+    
+    
+    def pdf(self, x):
+        y = sp.stats.norm(loc=self.mu, scale=self.sigma).pdf(x)
+        return y
+    
+    
+    def cdf(self, x):
+        y = sp.stats.norm(loc=self.mu, scale=self.sigma).cdf(x)
+        return y
+    
+    
+    def rvs(self, size=1):
+        sample = sp.stats.norm(loc=self.mu, scale=self.sigma).rvs(size=size)
+        return sample
+
+
+class GaussianMixtureDistribution(BaseDistribution):
     
     '''
     A GaussianMixtureDistribution is a list of triples that parametrise the components of a Gaussian mixture distribution.
@@ -87,17 +263,17 @@ class GaussianMixtureDistribution:
         return self.standardised_moment(4)
     
 
-    def mvsk(self):
+    # def mvsk(self):
     
-        '''
-        The first four standardised moments about the mean of a mixture distribution.
-        '''
+    #     '''
+    #     The first four standardised moments about the mean of a mixture distribution.
+    #     '''
     
-        m = self.mean()
-        v = self.var()
-        s = self.skew()
-        k = self.kurt()
-        return (m,v,s,k)
+    #     m = self.mean()
+    #     v = self.var()
+    #     s = self.skew()
+    #     k = self.kurt()
+    #     return (m,v,s,k)
 
             
     def rvs(self, sample_size=1):
@@ -157,7 +333,7 @@ class GaussianMixtureDistribution:
     
     
 
-class ProductDistribution:
+class ProductDistribution(BaseDistribution):
     
     '''
     A ProducDistribution is a list of tuples that contains the first central moments of the factor distributions.
@@ -220,9 +396,9 @@ class ProductDistribution:
         kurt = fourth_central_moment/(self.var()**2)-3
         return kurt
 
-    def mvsk(self):
-        m = self.mean()
-        v = self.var()
-        s = self.skew()
-        k = self.kurt()
-        return (m,v,s,k)
+    # def mvsk(self):
+    #     m = self.mean()
+    #     v = self.var()
+    #     s = self.skew()
+    #     k = self.kurt()
+    #     return (m,v,s,k)

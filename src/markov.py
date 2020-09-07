@@ -103,9 +103,9 @@ class MarkovChain:
     def iterate(self, steps=1, set_state=False):
         
         '''
-        Iterates the MarkovChain object in place.
-        steps needs to be a positive integer.
-        (negative steps work, but tend to break before the initial state)
+        Iterates the MarkovChain object the specified number of steps.
+        steps should be a positive integer.
+        (negative steps work, but tend to break when going before the initial state)
         If set_state=True, MarkovChain object is modified in place.
         '''
         
