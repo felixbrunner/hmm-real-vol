@@ -186,152 +186,250 @@ class NormalDistribution(BaseDistribution):
         return sample
 
 
-class GaussianMixtureDistribution(BaseDistribution):
+class MixtureDistribution(BaseDistribution):
     
     '''
-    A GaussianMixtureDistribution is a list of triples that parametrise the components of a Gaussian mixture distribution.
+    A mixture distribution is a list of triples that parametrise the components of a Gaussian mixture distribution.
     Each triple is a tuple of mean, standard deviation and probability weight of the component.
     '''
     
-    def __init__(self, components=[]):
+    def __init__(self, components=None):
         self.components = components
-        self.n_components = len(self.components)
         
-    def add_component(self,component):
-        self.components += [component]
-        self.n_components += 1
+    
+    def _check_component(self, component):
+        dist, weight = component
+        assert isinstance(dist, BaseDistribution), \
+            'unknown component distribution type'
+        assert type(weight) == float or type(weight) == int, \
+            'weight needs to be numberic'
+    
+    @property
+    def components(self):
         
+        '''
+        
+        '''
+        
+        return self._components
+    
+    @components.setter
+    def components(self, components):
+        assert type(components) == list, \
+            'components needs to be a list of tuples'
+        for component in components:
+            self._check_component(component)
+        self._components = components
+        
+        
+    @property
+    def distributions(self):
+        
+        '''
+        Returns a list of component distributions.
+        '''
+        
+        distributions = [component[0] for component in self.components]
+        return distributions
+        
+        
+    @property
+    def weights(self):
+        
+        '''
+        Returns a list of component weights.
+        '''
+        
+        weights = [component[1] for component in self.components]
+        return weights
+    
+    
+    @property
+    def n_components(self):
+        
+        '''
+        Returns the number of components.
+        '''
+        
+        return len(self.components)
+    
+    
+    def add_component(self, distribution, weight):
+        
+        '''
+        Adds a component to the mixture distribution.
+        Inputs needs to be a distribution and a weight.
+        '''
+        
+        component = (distribution, weight)
+        self._check_component(component)
+        self.components = self.components + [component]
+
+        
+    def mean(self):
+        
+        '''
+        Returns the mean.
+        '''
+        
+        mean = sum([component.mean()*weight for (component, weight) in self.components])
+        return mean
+        
+    
     def central_moment(self, moment):
 
         '''
-        Compute the central moments of a mixture of normal components.
-        Moment is the order of the central moment to compute.
+        Returns the central moment of input order.
         '''
 
-        mean = sum([w*m for (m, s, w) in self.components])
+        assert moment > 0, \
+            'moment needs to be positive'
     
         if moment is 1:
-            return mean
+            return 0
         else:
-            mixture_moment = 0
-            for (m, s, w) in self.components:
+            mean = self.mean()
+            inputs = [(component.mean(), component.std(), weight) for (component, weight) in self.components]
+            central_moment = 0
+            for (m, s, w) in inputs:
                 for k in range(moment+1):
-                    product = sp.special.comb(moment, k) * (m-mean)**(moment-k) * normal_central_moment(s, k)
-                    mixture_moment += w * product
-            return mixture_moment
+                    product = sp.special.comb(moment, k) * (m-mean)**(moment-k) * sp.stats.norm(loc=0, scale=s).moment(k)
+                    central_moment += w * product
+            return central_moment
+        
         
     def standardised_moment(self, moment):
     
         '''
-        Normalised moment of a mixture distribution.
+        Returns the normalised moment of input order.
         '''
     
         if (moment<=2):
-            mixture_moment = self.central_moment(moment)
+            standardised_moment = self.central_moment(moment)
         else:
-            mixture_variance = self.central_moment(2)
-            mixture_central_moment = self.central_moment(moment)
-            mixture_moment = mixture_central_moment / mixture_variance**(moment/2)
+            variance = self.central_moment(2)
+            central_moment = self.central_moment(moment)
+            standardised_moment = central_moment / variance**(moment/2)
             if (moment%2==0):
-                bias = normal_central_moment(1,moment)
-                mixture_moment -= bias
-        return mixture_moment
-    
-
-    def mean(self):
-        return self.standardised_moment(1)
+                bias = sp.stats.norm(loc=0, scale=1).moment(moment)
+                standardised_moment -= bias
+        return standardised_moment
     
 
     def var(self):
+        
+        '''
+        Returns the distribution variance.
+        '''
+        
         return self.standardised_moment(2)
     
 
-    def std(self):
-        return self.standardised_moment(2)**0.5
-    
-
     def skew(self):
+        
+        '''
+        Returns the distribution skewness.
+        '''
+        
         return self.standardised_moment(3)
     
 
     def kurt(self):
         
         '''
-        Note that the output value is the excess kurtosis.
+        Returns the distribution kurtosis.
         '''
         
         return self.standardised_moment(4)
     
-
-    # def mvsk(self):
     
-    #     '''
-    #     The first four standardised moments about the mean of a mixture distribution.
-    #     '''
-    
-    #     m = self.mean()
-    #     v = self.var()
-    #     s = self.skew()
-    #     k = self.kurt()
-    #     return (m,v,s,k)
-
-            
-    def rvs(self, sample_size=1):
-    
+    def entropy(self, level='state'):
+        
         '''
-        Draw a random sample from a mixture distribution
+        Returns Shannon's entropy based on logarithms with base n of the n component probabilities.
         '''
+        
+        if level == 'state':
+            entropy = sp.stats.entropy(mix.weights, base=mix.n_components)
+        else:
+            raise NotImplementedError('random variable entropy not implemented')
+        return entropy
     
-        weights = [p for (m,s,p) in self.components]
-        norm_params = [(m,s) for (m,s,p) in self.components]
-        draw_from = np.random.choice(self.n_components, size=sample_size, replace=True, p=weights)
-        sample = np.fromiter((ss.norm.rvs(*(norm_params[i])) for i in draw_from),dtype=np.float64)
-        if sample_size is 1:
-            sample = sample[0]
-        return sample
+    
+    def component_means(self):
+        
+        '''
+        Returns a list of component means.
+        '''
+        
+        means = [distribution.mean() for (distribution, weight) in self.components]
+        return means
+    
+    
+    def component_stds(self):
+        
+        '''
+        Returns a list of component standard deviations.
+        '''
+        
+        stds = [distribution.std() for (distribution, weight) in self.components]
+        return stds
     
 
-    def pdf(self, x):
+    def pdf2(self, x):
+        
+        '''
+        
+        '''
+        
         y = np.zeros(np.array(x).shape)
         for (m, s, w) in self.components:
             y += w*sp.stats.norm.pdf(x, m, s)
         return y
     
-
-    def cdf(self, x):
+    
+    def pdf(self, x):
+        
+        '''
+        Evaluates the probability density function at x.
+        '''
+        
         y = np.zeros(np.array(x).shape)
-        for (m, s, w) in self.components:
-            y += w*sp.stats.norm.cdf(x, m, s)
+        for (component, weight) in self.components:
+            y += weight*component.pdf(x)
         return y
     
+    
+    def cdf(self, x):
+        
+        '''
+        Evaluates the cumulative density function at x.
+        '''
+        
+        y = np.zeros(np.array(x).shape)
+        for (component, weight) in self.components:
+            y += weight*component.cdf(x)
+        return y
 
-    def entropy(self):
-        
+
+    def rvs(self, size=1, return_states=False):
+    
         '''
-        Calculate Shannon's entropy based on logarithms with base n of the n component probabilities.
+        Draw a random sample from a mixture distribution
         '''
+    
+        states = np.random.choice(self.n_components, size=size, replace=True, p=self.weights)
+        sample = np.fromiter((self.components[i][0].rvs() for i in states), dtype=np.float64)
         
-        entropy = 0
-        for (m, s, w) in self.components:
-            if w == 0:
-                pass
-            else:
-                entropy += w*np.log(w)/np.log(self.n_components)
-        return abs(entropy)
+        if size is 1:
+            sample = sample[0]
+            
+        if return_states:
+            return (sample, states)
+        else:
+            return sample
     
-    def get_component_means(self):
-        means = [m for (m,s,w) in self.components]
-        return means
-    
-    def get_component_stds(self):
-        stds = [s for (m,s,w) in self.components]
-        return stds
-    
-    def get_component_weights(self):
-        weights = [w for (m,s,w) in self.components]
-        return weights
-    
-    
+
 
 class ProductDistribution(BaseDistribution):
     
