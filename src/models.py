@@ -2,6 +2,8 @@ import numpy as np
 import warnings
 from scipy.stats import norm
 
+from src.dists import NormalDistribution, MixtureDistribution
+
 
 class BaseModel:
     
@@ -22,7 +24,7 @@ class BaseModel:
         return score
 
 
-class NormalModel(BaseModel):
+class NormalModel(BaseModel, NormalDistribution):
     
     '''
     i.i.d. normal distribution model
@@ -66,12 +68,20 @@ class NormalModel(BaseModel):
         self.mu = mean
         self.sigma = np.sqrt(variance)
         
-    def pdf(self, Y):
         
-        '''
-        Returns the likelihood of each observation in an observation sequence.
-        '''
+class MixtureModel(BaseModel, MixtureDistribution):
+    
+    '''
+    mixture model of arbitrary distributions
+    '''
+    
+    def __init__(self, components=[]):
+        self.components = components
         
-        Y = np.array(Y)
-        pdf = norm(loc=self.mu, scale=self.sigma).pdf(Y)
-        return pdf
+        
+    def fit(self, y):
+        ### use EM algorithm
+        raise NotImplementedError('fit method not implemented')
+        
+        
+    

@@ -179,6 +179,9 @@ class NormalDistribution(BaseDistribution):
     
     def rvs(self, size=1):
         sample = sp.stats.norm(loc=self.mu, scale=self.sigma).rvs(size=size)
+
+        if size == 1:
+            sample = sample[0]
         return sample
 
 
@@ -568,4 +571,3 @@ class ProductDistribution(BaseDistribution):
     
     def cdf(self):
         raise NotImplementedError('exact cdf unknown')
-
