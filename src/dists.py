@@ -1,15 +1,11 @@
-# IMPORTS
+### IMPORTS ###
 
 import numpy as np
 import scipy as sp
 import pandas as pd
 
-import scipy.stats as ss
-
-from src.utils import normal_central_moment
-
-# CLASSES
-
+#import scipy.stats as ss
+#from src.utils import normal_central_moment
 
 class BaseDistribution:
     
@@ -425,8 +421,6 @@ class MixtureDistribution(BaseDistribution):
             return sample
     
 
-    
-
 
 class ProductDistribution(BaseDistribution):
     
@@ -435,38 +429,98 @@ class ProductDistribution(BaseDistribution):
     Note that the input moments have to be non-standardised and factor draws have to be independent.
     '''
     
-    def __init__(self, factors_moments=[]):
-        self.factors_moments = factors_moments
-        self.n_factors = len(self.factors_moments)
+    def __init__(self, factors=None):
+        self.factors = factors
         
-    def add_factor(self,factors_moments):
-        self.factors_moments += [factors_moments]
-        self.n_factors += 1
         
+    def _check_factor(self, factor):
+        
+        '''
+        Checks factor inputs.
+        '''
+        
+        assert isinstance(factor, BaseDistribution), \
+            'unknown factor distribution type'
+
+        
+    @property
+    def factors(self):
+        
+        '''
+        List of factor distributions.
+        Each element needs to be instances of BaseDistribution.
+        '''
+        
+        return self._factors
+    
+    @factors.setter
+    def factors(self, factors):
+        assert type(factors) == list, \
+            'factors needs to be a list of tuples'
+        for factor in factors:
+            self._check_factor(factor)
+        self._factors = factors
+    
+    
+    @property
+    def n_factors(self):
+        
+        '''
+        Returns the number of factors.
+        '''
+        
+        return len(self.factors)
+    
+    
+    def add_factor(self, factor):
+        
+        '''
+        Adds a factor to the mixture distribution.
+        Input needs to instance of BaseDistribution.
+        '''
+        
+        self._check_factor(factor)
+        self.factors = self.factors + [factor]
+
+
     def mean(self):
+        
+        '''
+        Returns the distribution mean.
+        '''
+        
         prod = 1
-        for factor in self.factors_moments:
-            m = factor[0]
+        for factor in self.factors:
+            m = factor.mean()
             prod *= m
         mean = prod
         return mean
+    
 
     def var(self):
-        prod1,prod2 = 1,1
-        for factor in self.factors_moments:
-            (m,s) = (factor[0],factor[1])
+        
+        '''
+        Returns the distribution variance.
+        '''
+        
+        prod1, prod2 = 1, 1
+        for factor in self.factors:
+            (m, s) = (factor.mean(), factor.var())
             prod1 *= m**2+s
             prod2 *= m**2
         var = prod1 - prod2
         return var
     
-    def std(self):
-        return self.var()**0.5
 
     def skew(self):
-        prod1,prod2,prod3 = 1,1,1
-        for factor in self.factors_moments:
-            (m,s,g) = (factor[0],factor[1],factor[2])
+        
+        '''
+        Returns the distribution skewness.
+        '''
+        
+        prod1, prod2, prod3 = 1, 1, 1
+        for factor in self.factors:
+            (m, s, g) = (factor.mean(), factor.var(), factor.central_moment(3))
             prod1 *= g+3*m*s+m**3
             prod2 *= m*s+m**3
             prod3 *= m**3
@@ -477,12 +531,12 @@ class ProductDistribution(BaseDistribution):
     def kurt(self):
         
         '''
-        Note that the output value is the excess kurtosis.
+        Returns the distribution kurtosis.
         '''
         
-        prod1,prod2,prod3,prod4 = 1,1,1,1
-        for factor in self.factors_moments:
-            (m,s,g,k) = (factor[0],factor[1],factor[2],factor[3])
+        prod1, prod2, prod3, prod4 = 1, 1, 1, 1
+        for factor in self.factors:
+            (m, s, g, k) = (factor.mean(), factor.var(), factor.central_moment(3), factor.central_moment(4))
             prod1 *= k+4*m*g+6*m**2*s+m**4
             prod2 *= m*g+3*m**2*s+m**4
             prod3 *= m**2*s+m**4
@@ -491,9 +545,27 @@ class ProductDistribution(BaseDistribution):
         kurt = fourth_central_moment/(self.var()**2)-3
         return kurt
 
-    # def mvsk(self):
-    #     m = self.mean()
-    #     v = self.var()
-    #     s = self.skew()
-    #     k = self.kurt()
-    #     return (m,v,s,k)
+
+    def rvs(self, size=1):
+        
+        '''
+        Returns a random sample drawn from a mixture distribution
+        '''
+        
+        sample = np.ones(size)
+        for factor in self.factors:
+            sample *= factor.rvs(size=size)
+
+        if size is 1:
+            sample = sample[0]
+            
+        return sample
+
+    
+    def pdf(self):
+        raise NotImplementedError('exact pdf unknown')
+        
+    
+    def cdf(self):
+        raise NotImplementedError('exact cdf unknown')
+
