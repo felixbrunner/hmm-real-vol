@@ -356,7 +356,7 @@ class MixtureDistribution(BaseDistribution):
         '''
         
         if level == 'state':
-            entropy = sp.stats.entropy(mix.weights, base=mix.n_components)
+            entropy = sp.stats.entropy(self.weights, base=self.n_components)
         else:
             raise NotImplementedError('random variable entropy not implemented')
         return entropy

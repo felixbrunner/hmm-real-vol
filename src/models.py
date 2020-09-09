@@ -65,8 +65,8 @@ class NormalModel(BaseModel, NormalDistribution):
         variance = np.average(errors, weights=weights)
         
         # update
-        self.mu = mean
-        self.sigma = np.sqrt(variance)
+        self.mu = float(mean)
+        self.sigma = float(np.sqrt(variance))
         
         
 class MixtureModel(BaseModel, MixtureDistribution):
