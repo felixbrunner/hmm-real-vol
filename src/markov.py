@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import entropy
+import warnings
 
 class MarkovChain:
     
@@ -79,7 +80,6 @@ class MarkovChain:
             return steady_state
         
         
-    @property
     def expected_durations(self):
         
         '''
@@ -113,12 +113,15 @@ class MarkovChain:
         
         # ensure total probability is 1
         if new_state.sum() != 1:
-            new_state = new_state.round(16)/new_state.round(16).sum()
+            new_state = new_state.round(8)/new_state.round(8).sum()
+            warnings.warn('state vector probabilities rounded to 8 digits')
         
         if set_state:
             self.state_vector = new_state
         else:
-            return new_state
+            new_mc = MarkovChain(transition_matrix=self.transition_matrix,
+                                 state_vector=new_state)
+            return new_mc
         
         
     def forecast(self, horizons=[1]):

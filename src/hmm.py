@@ -56,7 +56,7 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         '''
         
         weights = self.state_vector.squeeze()
-        components = [(component, float(weight)) for (component, weight) in zip(self.emission_models, weights)]
+        components = [(component.distribution, float(weight)) for (component, weight) in zip(self.emission_models, weights)]
         return components
         
     
@@ -378,8 +378,55 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         return mc
 
 
+    def iterate(self, steps=1, set_state=False):
+        
+        '''
+        Iterates the model the specified number of steps.
+        steps should be a positive integer.
+        (negative steps work, but tend to break when going before the initial state)
+        If set_state=True, HiddenMarkovModel object is modified in place.
+        '''
+        
+        new_state = self.markov_chain.iterate(steps=steps).state_vector
+        new_models = [model.iterate(steps=steps) for model in self.emission_models]
+        
+        if set_state:
+            self.state_vector = new_state
+            self.emission_models = new_models
+        else:
+            new_hmm = HiddenMarkovModel(emission_models=new_models,
+                                        transition_matrix=self.transition_matrix,
+                                        state_vector=new_state)
+            return new_hmm
+
+
+
 
 # #### LEGACY CODE ####
+
+# class HMM(MarkovChain):
+#     def __init__(self, emission_models=(), transition_matrix=None, start_probas=None, switch_var=True, switch_const=True, k=None):
+        
+#         '''
+        
+#         '''
+
+#         self.emission_models = emission_models
+#         self.transition_matrix = transition_matrix
+#         self.start_probas = start_probas
+        
+#         self.switch_var = switch_var
+#         self.switch_const = switch_const
+#         self.k = k
+        
+#         self.params_ = None
+#         self.se_ = None
+#         self.tstats_ = None
+
+#         self.metrics_ = None
+#         self.smooth_prob_ = None
+#         self.filt_prob_ = None
+
 
 #     def fit(self, y, package='baumwelch', start_params=None, iter=100, **kwargs):
         

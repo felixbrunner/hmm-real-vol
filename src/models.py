@@ -14,6 +14,7 @@ class BaseModel:
     def __init__(self):
         pass
     
+
     def score(self, Y):
         
         '''
@@ -22,6 +23,15 @@ class BaseModel:
         
         score = np.log(self.pdf(Y)).sum()
         return score
+
+
+    def iterate(self, steps=1):
+
+        '''
+        Iterates the model forward the input number of steps.
+        '''
+
+        return self
 
 
 class NormalModel(BaseModel, NormalDistribution):
@@ -67,6 +77,18 @@ class NormalModel(BaseModel, NormalDistribution):
         # update
         self.mu = float(mean)
         self.sigma = float(np.sqrt(variance))
+
+
+    @property
+    def distribution(self):
+
+        '''
+        Extracts and returns a NormalDistribution object
+        with the the same parameters as the model.
+        '''
+
+        norm = NormalDistribution(mu=self.mu, sigma=self.sigma)
+        return norm
         
         
 class MixtureModel(BaseModel, MixtureDistribution):
@@ -82,6 +104,11 @@ class MixtureModel(BaseModel, MixtureDistribution):
     def fit(self, y):
         ### use EM algorithm
         raise NotImplementedError('fit method not implemented')
+
+    
+    @property
+    def distribution(self):
+        raise NotImplementedError('distribution not implemented')
         
         
     

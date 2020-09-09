@@ -3,6 +3,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
+
 def plot_mixture_pdf(mixture_distribution, n_space=1000, std_range=3, ax=None, **kwargs):
 
     lower = mixture_distribution.mean()-std_range*mixture_distribution.std()
