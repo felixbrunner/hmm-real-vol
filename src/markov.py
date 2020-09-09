@@ -30,7 +30,7 @@ class MarkovChain:
                 'transition matrix needs to be square'
             assert all(transition_matrix.sum(axis=1) == 1), \
                 'transition matrix rows need to sum to one'
-            if hasattr(self, 'state_vector'):
+            if self.state_vector is not None:
                 assert transition_matrix.shape[0] == self.state_vector.shape[1], \
                     'state vector dimension mismatch'
             self._transition_matrix = transition_matrix
@@ -55,7 +55,7 @@ class MarkovChain:
                 'state vector needs to sum to one'
             assert (state_vector>=0).all() and (state_vector<=1).all(), \
                 'probabilites need to be bounded between zero and one'
-            if hasattr(self, 'transition_matrix'):
+            if self.transition_matrix is not None:
                 assert state_vector.shape[1] == self.transition_matrix.shape[0], \
                     'transition matrix dimension mismatch'
             self._state_vector = state_vector
@@ -97,7 +97,12 @@ class MarkovChain:
         Returns the number of states of the MarkovChain object.
         '''
         
-        return self.state_vector.shape[1]
+        if self.state_vector is not None:
+            return self.state_vector.shape[1]
+        elif self.transition_matrix is not None:
+            return self.transition_matrix.shape[0]
+        else:
+            raise TypeError('MarkovChain object empty')
 
 
     def iterate(self, steps=1, set_state=False):

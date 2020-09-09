@@ -46,6 +46,19 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
             
         else:
             self._emission_models = None
+
+    
+    @property
+    def n_components(self):
+
+        '''
+        Return the number of component models.
+        '''
+
+        if self.emission_models is not None:
+            return len(self.emission_models)
+        else:
+            return self.markov_chain.n_states
             
             
     @property
@@ -132,9 +145,12 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
             'emission models not specified'
             
         if self.state_vector is None:
-            self.steady_state(set_state=True)
+            if self.transition_matrix is None:
+                self.state_vector = np.full([1, self.n_components], 1/self.n_components)
+            else:
+                self.steady_state(set_state=True)
         if self.transition_matrix is None:
-            self.transition_matrix = np.full([self.n_states, self.n_states], 1/self.n_states)
+            self.transition_matrix = np.full([self.n_components, self.n_components], 1/self.n_components)
         
         A = self.transition_matrix
         models = self.emission_models
