@@ -185,6 +185,16 @@ class NormalDistribution(BaseDistribution):
         return sample
 
 
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'NormalDistribution(mu={}, sigma={})'.format(round(self.mu, 4), round(self.sigma, 4))
+        return string
+
+
 class MixtureDistribution(BaseDistribution):
     
     '''
@@ -422,6 +432,19 @@ class MixtureDistribution(BaseDistribution):
             return (sample, states)
         else:
             return sample
+
+
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'MixtureDistribution(\n'
+        for (component, weight) in self.components:
+            string += '\t {}, weight={},\n'.format(component.__str__(), weight)
+        string += ')'
+        return string
     
 
 
@@ -571,6 +594,19 @@ class ProductDistribution(BaseDistribution):
     
     def cdf(self):
         raise NotImplementedError('exact cdf unknown')
+
+
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'ProductDistribution(\n'
+        for factor in self.factors:
+            string += '\t {},\n'.format(factor.__str__())
+        string += ')'
+        return string
 
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+import copy
 
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 from hmmlearn.hmm import GaussianHMM
@@ -424,6 +425,9 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         
         '''
 
+        assert horizon > 0 and type(horizon) == int, \
+            'horizon needs to be a positive integer'
+
         factors = []
         if include_current:
             factors += [self.distribution]
@@ -433,6 +437,16 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
 
         product_distribution = ProductDistribution(factors=factors)
         return product_distribution
+
+
+    def copy(self):
+
+        '''
+        Returns a deep copy with new memory address.
+        '''
+
+        new_hmm = copy.deepcopy(self)
+        return new_hmm
 
 
 
