@@ -5,7 +5,7 @@ import warnings
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 from hmmlearn.hmm import GaussianHMM
 
-from src.dists import MixtureDistribution
+from src.dists import MixtureDistribution, ProductDistribution
 from src.markov import MarkovChain
 from src.models import MixtureModel
 
@@ -68,6 +68,8 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         The mixture distribution components.
         '''
         
+        assert self.state_vector is not None, \
+            'state vector not set'
         weights = self.state_vector.squeeze()
         components = [(component.distribution, float(weight)) for (component, weight) in zip(self.emission_models, weights)]
         return components
@@ -415,6 +417,22 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
                                         state_vector=new_state)
             return new_hmm
 
+
+    def product_distribution(self, horizon=1, include_current=False):
+
+        '''
+        
+        '''
+
+        factors = []
+        if include_current:
+            factors += [self.distribution]
+
+        for h in range(1, horizon+1):
+            factors += [self.iterate(h).distribution]
+
+        product_distribution = ProductDistribution(factors=factors)
+        return product_distribution
 
 
 

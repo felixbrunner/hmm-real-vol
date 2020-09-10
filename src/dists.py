@@ -72,7 +72,7 @@ class NormalDistribution(BaseDistribution):
     
     @mu.setter
     def mu(self, mu):
-        assert type(mu) == int or type(mu) == float, \
+        assert type(mu) == int or type(mu) == float or type(mu) == np.float64, \
             'mu needs to be numeric'
         self._mu = mu
         
@@ -88,7 +88,7 @@ class NormalDistribution(BaseDistribution):
     
     @sigma.setter
     def sigma(self, sigma):
-        assert type(sigma) == int or type(sigma) == float, \
+        assert type(sigma) == int or type(sigma) == float or type(sigma) == np.float64, \
             'sigma needs to be numeric'
         self._sigma = sigma
     
@@ -205,7 +205,7 @@ class MixtureDistribution(BaseDistribution):
         dist, weight = component
         assert isinstance(dist, BaseDistribution), \
             'unknown component distribution type'
-        assert type(weight) == float or type(weight) == int, \
+        assert type(weight) == float or type(weight) == int or type(weight) == np.float64, \
             'weight needs to be numeric'
     
     @property

@@ -24,13 +24,13 @@ class MarkovChain:
         
     @transition_matrix.setter
     def transition_matrix(self, transition_matrix):
-        if transition_matrix is not None:        
+        if transition_matrix is not None:
             transition_matrix = np.array(transition_matrix)
             assert transition_matrix.shape[0] == transition_matrix.shape[1], \
                 'transition matrix needs to be square'
             assert all(transition_matrix.sum(axis=1) == 1), \
                 'transition matrix rows need to sum to one'
-            if self.state_vector is not None:
+            if hasattr(self, 'state_vector') and self.state_vector is not None:
                 assert transition_matrix.shape[0] == self.state_vector.shape[1], \
                     'state vector dimension mismatch'
             self._transition_matrix = transition_matrix
@@ -55,7 +55,7 @@ class MarkovChain:
                 'state vector needs to sum to one'
             assert (state_vector>=0).all() and (state_vector<=1).all(), \
                 'probabilites need to be bounded between zero and one'
-            if self.transition_matrix is not None:
+            if hasattr(self, 'transition_matrix') and self.transition_matrix is not None:
                 assert state_vector.shape[1] == self.transition_matrix.shape[0], \
                     'transition matrix dimension mismatch'
             self._state_vector = state_vector
