@@ -47,6 +47,24 @@ class BaseDistribution:
         k = self.kurt()
         return (m, v, s, k)
 
+    
+    def standardised_moment(self, moment):
+    
+        '''
+        Returns the normalised moment of input order.
+        '''
+    
+        # if (moment<=2):
+        #     standardised_moment = self.central_moment(moment)
+        # else:
+        variance = self.central_moment(2)
+        central_moment = self.central_moment(moment)
+        standardised_moment = central_moment / variance**(moment/2)
+            # if (moment%2==0):
+            #     bias = sp.stats.norm(loc=0, scale=1).moment(moment)
+            #     standardised_moment -= bias
+        return standardised_moment
+
 
 
 class NormalDistribution(BaseDistribution):
@@ -111,21 +129,21 @@ class NormalDistribution(BaseDistribution):
         return central_moment
     
     
-    def standardised_moment(self, moment):
+    # def standardised_moment(self, moment):
     
-        '''
-        Returns the normalised moment of input order.
-        '''
+    #     '''
+    #     Returns the normalised moment of input order.
+    #     '''
         
-        assert moment>0 and type(moment)==int, \
-            'moment needs to be a positive integer'
+    #     assert moment>0 and type(moment)==int, \
+    #         'moment needs to be a positive integer'
         
-        central_moment = self.central_moment(moment)
-        if (moment<=2):
-            standardised_moment = central_moment
-        else:
-            standardised_moment = central_moment / self.var()**(moment/2)
-        return standardised_moment
+    #     central_moment = self.central_moment(moment)
+    #     if (moment<=2):
+    #         standardised_moment = central_moment
+    #     else:
+    #         standardised_moment = central_moment / self.var()**(moment/2)
+    #     return standardised_moment
     
     
     def mean(self):
@@ -143,7 +161,7 @@ class NormalDistribution(BaseDistribution):
         Returns the distribution variance.
         '''
         
-        var = self.standardised_moment(2)
+        var = self.sigma**2
         return var
     
     
@@ -312,24 +330,6 @@ class MixtureDistribution(BaseDistribution):
                     product = sp.special.comb(moment, k) * (m-mean)**(moment-k) * sp.stats.norm(loc=0, scale=s).moment(k)
                     central_moment += w * product
             return central_moment
-        
-        
-    def standardised_moment(self, moment):
-    
-        '''
-        Returns the normalised moment of input order.
-        '''
-    
-        if (moment<=2):
-            standardised_moment = self.central_moment(moment)
-        else:
-            variance = self.central_moment(2)
-            central_moment = self.central_moment(moment)
-            standardised_moment = central_moment / variance**(moment/2)
-            if (moment%2==0):
-                bias = sp.stats.norm(loc=0, scale=1).moment(moment)
-                standardised_moment -= bias
-        return standardised_moment
     
 
     def var(self):
@@ -338,7 +338,7 @@ class MixtureDistribution(BaseDistribution):
         Returns the distribution variance.
         '''
         
-        return self.standardised_moment(2)
+        return self.central_moment(2)
     
 
     def skew(self):
@@ -568,7 +568,7 @@ class ProductDistribution(BaseDistribution):
             prod3 *= m**2*s+m**4
             prod4 *= m**4
         fourth_central_moment = prod1 - 4*prod2 + 6*prod3 - 3*prod4
-        kurt = fourth_central_moment/(self.var()**2)-3
+        kurt = fourth_central_moment/(self.var()**2)#-3
         return kurt
 
 
