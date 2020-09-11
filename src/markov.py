@@ -28,7 +28,7 @@ class MarkovChain:
             transition_matrix = np.array(transition_matrix)
             assert transition_matrix.shape[0] == transition_matrix.shape[1], \
                 'transition matrix needs to be square'
-            assert all(transition_matrix.sum(axis=1) == 1), \
+            assert all(transition_matrix.sum(axis=1).round(8) == 1), \
                 'transition matrix rows need to sum to one'
             if hasattr(self, 'state_vector') and self.state_vector is not None:
                 assert transition_matrix.shape[0] == self.state_vector.shape[1], \
@@ -51,7 +51,7 @@ class MarkovChain:
     def state_vector(self, state_vector):
         if state_vector is not None:
             state_vector = np.array(state_vector).reshape(1,-1)
-            assert state_vector.sum(axis=1) == 1, \
+            assert state_vector.sum(axis=1).round(8) == 1, \
                 'state vector needs to sum to one'
             assert (state_vector>=0).all() and (state_vector<=1).all(), \
                 'probabilites need to be bounded between zero and one'
@@ -117,9 +117,9 @@ class MarkovChain:
         new_state = np.dot(self.state_vector, np.linalg.matrix_power(self.transition_matrix, steps))
         
         # ensure total probability is 1
-        if new_state.sum() != 1:
-            new_state = new_state.round(8)/new_state.round(8).sum()
-            warnings.warn('state vector probabilities rounded to 8 digits')
+        # if new_state.sum() != 1:
+        #     new_state = new_state.round(8)/new_state.round(8).sum()
+        #     warnings.warn('state vector probabilities rounded to 8 digits')
         
         if set_state:
             self.state_vector = new_state
@@ -143,7 +143,7 @@ class MarkovChain:
         return horizons_states
     
 
-    def rvs(self, t_steps=0, random_state=1):
+    def rvs(self, size=0, random_state=1):
         
         '''
         Draws a random sample sequence from the MarkovChain object.
@@ -152,7 +152,7 @@ class MarkovChain:
         '''
         
         sample = np.random.choice(self.n_states, size=1, p=self.state_vector.squeeze())
-        for t in range(1, t_steps+1):
+        for t in range(1, size+1):
             sample = np.concatenate([sample, \
                         np.random.choice(self.n_states, size=1, p=self.transition_matrix[sample[-1]])])
         return sample

@@ -76,18 +76,17 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         return components
         
     
-    def fit(self, Y, method='baumwelch', max_iter=100, threshold=1e-6):
+    def fit(self, Y, method='baumwelch', **kwargs):
         
         '''
         Fits the model to a sample of data.
         '''
         
         if method == 'baumwelch':
-            self = self._estimate_baum_welch(Y, max_iter=max_iter, threshold=threshold, return_fit=False)
+            self = self._estimate_baum_welch(Y, **kwargs)
+            self.is_fitted = True
         else:
             raise NotImplementedError('fitting algorithm not implemented')
-        
-        self.is_fitted = True
     
     
     def _estimate_baum_welch(self, Y, max_iter=100, threshold=1e-6, return_fit=False):
@@ -348,18 +347,18 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         '''
         
         # ensure total transition probabilities are 1
-        if (A_.sum(axis=1) != 1).any():
-            A_ = A_.round(6)/A_.round(6).sum(axis=1)
-            warnings.warn('Transition matrix rounded to 6 decimal places')
+        # if (A_.sum(axis=1) != 1).any():
+        #     A_ = A_.round(6)/A_.round(6).sum(axis=1)
+        #     warnings.warn('Transition matrix rounded to 6 decimal places')
         self.transition_matrix = A_
         
         self.emission_models = models_
         
         state_vector = Alpha[-1]
         # ensure total state probability is 1
-        if state_vector.sum() != 1:
-            state_vector = state_vector.round(8)/state_vector.round(8).sum()
-            warnings.warn('State vector rounded to 8 decimal places')
+        # if state_vector.sum() != 1:
+        #     state_vector = state_vector.round(8)/state_vector.round(8).sum()
+        #     warnings.warn('State vector rounded to 8 decimal places')
         self.state_vector = state_vector
     
     
@@ -448,6 +447,38 @@ class HiddenMarkovModel(MixtureModel, MarkovChain):
         new_hmm = copy.deepcopy(self)
         return new_hmm
 
+    
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'HiddenMarkovModel(\n'
+        string += 'P=\n{},\n'.format(self.transition_matrix.__str__())
+        string += 'pi=\n{},\nM=\n('.format(self.state_vector.__str__())
+        for model in self.emission_models:
+            string += '{},\n'.format(model.distribution.__str__())
+        string += '))'
+        return string
+
+
+    def rvs(self, size=1, return_states=False):
+    
+        '''
+        Draw a random sequence of specified length.
+        '''
+    
+        states = self.markov_chain.rvs(size=size)
+        sample = np.fromiter((self.components[i][0].rvs() for i in states), dtype=np.float64)
+        
+        if size is 1:
+            sample = sample[0]
+            
+        if return_states:
+            return (sample, states)
+        else:
+            return sample
 
 
 # #### LEGACY CODE ####

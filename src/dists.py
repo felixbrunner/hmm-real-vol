@@ -129,23 +129,6 @@ class NormalDistribution(BaseDistribution):
         return central_moment
     
     
-    # def standardised_moment(self, moment):
-    
-    #     '''
-    #     Returns the normalised moment of input order.
-    #     '''
-        
-    #     assert moment>0 and type(moment)==int, \
-    #         'moment needs to be a positive integer'
-        
-    #     central_moment = self.central_moment(moment)
-    #     if (moment<=2):
-    #         standardised_moment = central_moment
-    #     else:
-    #         standardised_moment = central_moment / self.var()**(moment/2)
-    #     return standardised_moment
-    
-    
     def mean(self):
         
         '''
