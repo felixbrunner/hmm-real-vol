@@ -174,4 +174,19 @@ class MarkovChain:
                 state_entropy += [entropy(horizon.squeeze(), base=self.n_states)]
             
         return np.array(state_entropy)
+
+
+    def __repr__(self):
+        return str(self)
+
+
+    def __str__(self):
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'MarkovChain(\n'
+        string += 'P=\n{},\n'.format(self.transition_matrix.__str__())
+        string += 'pi=\n{}\n)'.format(self.state_vector.__str__())
+        return string
     

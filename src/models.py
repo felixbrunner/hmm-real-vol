@@ -33,6 +33,10 @@ class BaseModel:
 
         return self
 
+    
+    def __repr__(self):
+        return str(self)
+
 
 class NormalModel(BaseModel, NormalDistribution):
     
@@ -89,6 +93,16 @@ class NormalModel(BaseModel, NormalDistribution):
 
         norm = NormalDistribution(mu=self.mu, sigma=self.sigma)
         return norm
+
+
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'NormalModel(mu={}, sigma={})'.format(round(self.mu, 4), round(self.sigma, 4))
+        return string
         
         
 class MixtureModel(BaseModel, MixtureDistribution):
@@ -110,5 +124,16 @@ class MixtureModel(BaseModel, MixtureDistribution):
     def distribution(self):
         raise NotImplementedError('distribution not implemented')
         
-        
+
+    def __str__(self):
+
+        '''
+        Returns a summarizing string
+        '''
+
+        string = 'MixtureModel(\n'
+        for (component, weight) in self.components:
+            string += '\t {}, weight={},\n'.format(component.__str__(), weight)
+        string += ')'
+        return string
     

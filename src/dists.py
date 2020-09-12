@@ -66,6 +66,9 @@ class BaseDistribution:
         return standardised_moment
 
 
+    def __repr__(self):
+        return str(self)
+
 
 class NormalDistribution(BaseDistribution):
     
