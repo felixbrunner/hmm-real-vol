@@ -8,70 +8,53 @@ import pandas as pd
 #from src.utils import normal_central_moment
 
 class BaseDistribution:
-    
     '''
     Base class for distributions.
     '''
-    
+
     def __init__(self):
         pass
-    
 
     def std(self):
-
-        '''
-        Returns the distribution standard deviation.
-        '''
-
+        '''Returns the distribution standard deviation.'''
         return self.var()**0.5
 
-
     def exkurt(self):
-
-        '''
-        Returns the excess kurtosis.
-        '''
-
+        '''Returns the excess kurtosis.'''
         return self.kurt()-3
 
-
     def mvsk(self):
-    
-        '''
-        Returns the first four standardised moments about the mean.
-        '''
-    
+        '''Returns the first four standardised moments about the mean.'''
         m = self.mean()
         v = self.var()
         s = self.skew()
         k = self.kurt()
         return (m, v, s, k)
 
-    
     def standardised_moment(self, moment):
-    
-        '''
-        Returns the normalised moment of input order.
-        '''
-    
-        # if (moment<=2):
-        #     standardised_moment = self.central_moment(moment)
-        # else:
+        '''Returns the normalised moment of input order.'''
         variance = self.central_moment(2)
         central_moment = self.central_moment(moment)
         standardised_moment = central_moment / variance**(moment/2)
-            # if (moment%2==0):
-            #     bias = sp.stats.norm(loc=0, scale=1).moment(moment)
-            #     standardised_moment -= bias
         return standardised_moment
 
+    def excess_moment(self, moment):
+        '''Returns the normalised moment of input order
+        in excess of normal distribution.
+        '''
+        assert moment > 2, \
+            'no excess at low moment order'
+        standardised_moment = self.standardised_moment(moment)
+        if (moment%2==0):
+            bias = sp.stats.norm(loc=0, scale=1).moment(moment)
+            excess_moment = standardised_moment - bias
+        return excess_moment
 
     def __repr__(self):
         return str(self)
 
 
 class NormalDistribution(BaseDistribution):
-    
     '''
     A normal distribution.
     If no parameters are specified, a standard normal distribution.
@@ -84,11 +67,7 @@ class NormalDistribution(BaseDistribution):
         
     @property
     def mu(self):
-        
-        '''
-        The distribution mean.
-        '''
-        
+        '''Returns the distribution mean.'''
         return self._mu
     
     @mu.setter
